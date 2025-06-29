@@ -1,6 +1,6 @@
 const TAVUS_API_KEY = '5a77b4154cfc4453b08ab72a805fc30e';
 const REPLICA_ID = 'rb17cf590e15';
-const PERSONA_ID = 'pa266d0201f8';
+const PERSONA_ID = 'p34cc82788ae';
 const TAVUS_BASE_URL = '/tavusapi';
 
 export class TavusService {
@@ -57,7 +57,7 @@ export class TavusService {
       //   "status": "active",
       //   "conversation_url": "https://tavus.daily.co/c123456",
       //   "replica_id": "rb17cf590e15",
-      //   "persona_id": "pa266d0201f8",
+      //   "persona_id": "p34cc82788ae",
       //   "created_at": "2025-06-29T12:34:56Z"
       // }
       
