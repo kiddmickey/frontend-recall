@@ -441,7 +441,7 @@ const PatientProfileForm: React.FC<PatientProfileFormProps> = ({
               <>
                 <Save className="w-4 h-4" />
                 Save Profile
-              <//>
+              </>
             )}
           </button>
         </div>
