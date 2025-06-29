@@ -95,8 +95,29 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       setSessionId(savedSession.id);
 
     } catch (err) {
-      setError('Failed to initialize conversation. Please try again.');
       console.error('Conversation initialization error:', err);
+      
+      // Parse the error message to provide more specific feedback
+      let errorMessage = 'Failed to initialize conversation. Please try again.';
+      
+      if (err && typeof err === 'object' && 'message' in err) {
+        const errorStr = String(err.message);
+        if (errorStr.includes('maximum concurrent conversations')) {
+          errorMessage = 'Tavus API Error: You have reached the maximum number of concurrent conversations. Please end any existing conversations or try again later.';
+        } else if (errorStr.includes('400')) {
+          errorMessage = 'Tavus API Error: Invalid request. Please check your configuration and try again.';
+        } else if (errorStr.includes('401') || errorStr.includes('unauthorized')) {
+          errorMessage = 'Tavus API Error: Authentication failed. Please check your API credentials.';
+        } else if (errorStr.includes('403') || errorStr.includes('forbidden')) {
+          errorMessage = 'Tavus API Error: Access denied. Please check your API permissions.';
+        } else if (errorStr.includes('429') || errorStr.includes('rate limit')) {
+          errorMessage = 'Tavus API Error: Rate limit exceeded. Please wait a moment and try again.';
+        } else if (errorStr.includes('500') || errorStr.includes('internal server error')) {
+          errorMessage = 'Tavus API Error: Server error. Please try again later.';
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -203,7 +224,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         <div className="text-red-600 mb-4">
           <Video className="w-12 h-12" />
         </div>
-        <p className="text-red-600 mb-4">{error}</p>
+        <p className="text-red-600 mb-4 text-center max-w-md">{error}</p>
         <button
           onClick={initializeConversation}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
