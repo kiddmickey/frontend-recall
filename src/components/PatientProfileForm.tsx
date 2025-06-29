@@ -146,8 +146,14 @@ const PatientProfileForm: React.FC<PatientProfileFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Create profile data that matches the actual database schema
       const profileData = {
-        ...profile,
+        preferred_name: profile.preferred_name,
+        family_relationships: profile.family_relationships,
+        life_events: profile.life_events,
+        personality_traits: profile.personality_traits,
+        medical_notes: profile.medical_notes,
+        medication_schedule: profile.medication_schedule,
         id: existingProfile?.id || undefined,
         created_at: existingProfile?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -435,7 +441,7 @@ const PatientProfileForm: React.FC<PatientProfileFormProps> = ({
               <>
                 <Save className="w-4 h-4" />
                 Save Profile
-              </>
+              <//>
             )}
           </button>
         </div>
