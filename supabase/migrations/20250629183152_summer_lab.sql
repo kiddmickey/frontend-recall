@@ -1,31 +1,32 @@
 /*
   # Complete Database Schema Setup
 
-  This migration creates all necessary tables for the Family Memories application:
-
   1. New Tables
-    - `patient_profiles` - Store patient information and profiles
-    - `memory_cards` - Store memory cards with photos, audio, and metadata
-    - `sessions` - Track conversation sessions with patients
+    - `patient_profiles` - Store patient information and preferences
+    - `memory_cards` - Store memory photos, audio, and metadata
+    - `sessions` - Track conversation sessions with AI
     - `transcripts` - Store conversation transcripts and analysis
 
   2. Security
     - Enable RLS on all tables
-    - Add policies for authenticated users to manage their data
+    - Add policies for authenticated users to access all data
 
-  3. Indexes
-    - Performance indexes for common queries
+  3. Performance
+    - Add indexes for common query patterns
     - Full-text search index for transcripts
-
-  4. Foreign Key Relationships
-    - Proper cascading deletes to maintain data integrity
 */
 
--- Enable UUID extension if not already enabled
+-- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Drop existing tables if they exist (for clean setup)
+DROP TABLE IF EXISTS transcripts CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS memory_cards CASCADE;
+DROP TABLE IF EXISTS patient_profiles CASCADE;
+
 -- Create patient_profiles table
-CREATE TABLE IF NOT EXISTS patient_profiles (
+CREATE TABLE patient_profiles (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   preferred_name text NOT NULL,
   family_relationships jsonb DEFAULT '{}'::jsonb,
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS patient_profiles (
 );
 
 -- Create memory_cards table
-CREATE TABLE IF NOT EXISTS memory_cards (
+CREATE TABLE memory_cards (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   patient_id uuid REFERENCES patient_profiles(id) ON DELETE CASCADE,
   photo_url text DEFAULT ''::text,
@@ -53,7 +54,7 @@ CREATE TABLE IF NOT EXISTS memory_cards (
 );
 
 -- Create sessions table
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE sessions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   patient_id uuid REFERENCES patient_profiles(id) ON DELETE CASCADE,
   memory_id uuid REFERENCES memory_cards(id) ON DELETE SET NULL,
@@ -70,7 +71,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Create transcripts table
-CREATE TABLE IF NOT EXISTS transcripts (
+CREATE TABLE transcripts (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   patient_id uuid REFERENCES patient_profiles(id) ON DELETE CASCADE,
   session_id uuid REFERENCES sessions(id) ON DELETE CASCADE,
@@ -89,18 +90,18 @@ CREATE TABLE IF NOT EXISTS transcripts (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_memory_cards_patient_id ON memory_cards(patient_id);
-CREATE INDEX IF NOT EXISTS idx_memory_cards_date_taken ON memory_cards(date_taken DESC);
+CREATE INDEX idx_memory_cards_patient_id ON memory_cards(patient_id);
+CREATE INDEX idx_memory_cards_date_taken ON memory_cards(date_taken DESC);
 
-CREATE INDEX IF NOT EXISTS idx_sessions_patient_id ON sessions(patient_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_conversation_id ON sessions(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions(created_at DESC);
+CREATE INDEX idx_sessions_patient_id ON sessions(patient_id);
+CREATE INDEX idx_sessions_conversation_id ON sessions(conversation_id);
+CREATE INDEX idx_sessions_created_at ON sessions(created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_transcripts_patient_id ON transcripts(patient_id);
-CREATE INDEX IF NOT EXISTS idx_transcripts_session_id ON transcripts(session_id);
-CREATE INDEX IF NOT EXISTS idx_transcripts_conversation_id ON transcripts(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_transcripts_created_at ON transcripts(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_transcripts_full_text ON transcripts USING gin(to_tsvector('english', full_transcript));
+CREATE INDEX idx_transcripts_patient_id ON transcripts(patient_id);
+CREATE INDEX idx_transcripts_session_id ON transcripts(session_id);
+CREATE INDEX idx_transcripts_conversation_id ON transcripts(conversation_id);
+CREATE INDEX idx_transcripts_created_at ON transcripts(created_at DESC);
+CREATE INDEX idx_transcripts_full_text ON transcripts USING gin(to_tsvector('english', full_transcript));
 
 -- Enable Row Level Security
 ALTER TABLE patient_profiles ENABLE ROW LEVEL SECURITY;
