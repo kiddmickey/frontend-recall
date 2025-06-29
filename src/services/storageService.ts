@@ -3,25 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Check if environment variables are properly configured
-if (!supabaseUrl || !supabaseAnonKey || 
-    supabaseUrl === 'https://your-project-id.supabase.co' || 
-    supabaseAnonKey === 'your-anon-key-here') {
-  console.warn('Supabase environment variables are not properly configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
-}
-
-const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder-key'
-);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export class StorageService {
   // Memory Cards
   static async saveMemoryCard(memoryCard: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('save memory card');
-    }
-
     const newCard = {
       ...memoryCard,
       id: memoryCard.id || undefined, // Let Supabase generate UUID if not provided
@@ -44,10 +30,6 @@ export class StorageService {
   }
 
   static async getMemoryCards(): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('memory_cards')
       .select('*')
@@ -62,10 +44,6 @@ export class StorageService {
   }
 
   static async getMemoryCardsByPatient(patientId: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('memory_cards')
       .select('*')
@@ -81,10 +59,6 @@ export class StorageService {
   }
 
   static async deleteMemoryCard(memoryId: string): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured');
-    }
-
     const { error } = await supabase
       .from('memory_cards')
       .delete()
@@ -97,10 +71,6 @@ export class StorageService {
   }
 
   static async updateMemoryCard(memoryId: string, updates: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('update memory card');
-    }
-
     const { data, error } = await supabase
       .from('memory_cards')
       .update({
@@ -121,10 +91,6 @@ export class StorageService {
 
   // Patient Profiles
   static async savePatientProfile(profile: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('save patient profile');
-    }
-
     const profileData = {
       ...profile,
       updated_at: new Date().toISOString()
@@ -165,10 +131,6 @@ export class StorageService {
   }
 
   static async getPatientProfiles(): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('patient_profiles')
       .select('*')
@@ -183,10 +145,6 @@ export class StorageService {
   }
 
   static async getPatientProfile(patientId: string): Promise<any | null> {
-    if (!this.isSupabaseConfigured()) {
-      return null;
-    }
-
     const { data, error } = await supabase
       .from('patient_profiles')
       .select('*')
@@ -206,10 +164,6 @@ export class StorageService {
   }
 
   static async deletePatientProfile(patientId: string): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured');
-    }
-
     // Delete associated data first (cascading deletes should handle this, but being explicit)
     await Promise.all([
       supabase.from('transcripts').delete().eq('patient_id', patientId),
@@ -231,10 +185,6 @@ export class StorageService {
 
   // Sessions
   static async saveSession(session: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('save session');
-    }
-
     const sessionData = {
       ...session,
       created_at: session.created_at || new Date().toISOString(),
@@ -256,10 +206,6 @@ export class StorageService {
   }
 
   static async getSessions(): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('sessions')
       .select('*')
@@ -274,10 +220,6 @@ export class StorageService {
   }
 
   static async getSessionsByPatient(patientId: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('sessions')
       .select('*')
@@ -293,10 +235,6 @@ export class StorageService {
   }
 
   static async updateSession(sessionId: string, updates: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('update session');
-    }
-
     const { data, error } = await supabase
       .from('sessions')
       .update({
@@ -316,10 +254,6 @@ export class StorageService {
   }
 
   static async deleteSession(sessionId: string): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured');
-    }
-
     const { error } = await supabase
       .from('sessions')
       .delete()
@@ -333,10 +267,6 @@ export class StorageService {
 
   // Transcripts
   static async saveTranscript(transcript: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('save transcript');
-    }
-
     const transcriptData = {
       ...transcript,
       created_at: transcript.created_at || new Date().toISOString(),
@@ -358,10 +288,6 @@ export class StorageService {
   }
 
   static async getTranscripts(): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -376,10 +302,6 @@ export class StorageService {
   }
 
   static async getTranscriptsByPatient(patientId: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -395,10 +317,6 @@ export class StorageService {
   }
 
   static async getTranscriptsBySession(sessionId: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -414,10 +332,6 @@ export class StorageService {
   }
 
   static async getTranscriptByConversationId(conversationId: string): Promise<any | null> {
-    if (!this.isSupabaseConfigured()) {
-      return null;
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -437,10 +351,6 @@ export class StorageService {
   }
 
   static async updateTranscript(transcriptId: string, updates: any): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return this.handleMissingSupabase('update transcript');
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .update({
@@ -460,10 +370,6 @@ export class StorageService {
   }
 
   static async deleteTranscript(transcriptId: string): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured');
-    }
-
     const { error } = await supabase
       .from('transcripts')
       .delete()
@@ -477,10 +383,6 @@ export class StorageService {
 
   // Analytics and Search
   static async searchTranscripts(patientId: string, searchTerm: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -497,10 +399,6 @@ export class StorageService {
   }
 
   static async getTranscriptsByTopic(patientId: string, topic: string): Promise<any[]> {
-    if (!this.isSupabaseConfigured()) {
-      return [];
-    }
-
     const { data, error } = await supabase
       .from('transcripts')
       .select('*')
@@ -517,19 +415,6 @@ export class StorageService {
   }
 
   static async getPatientStats(patientId: string): Promise<any> {
-    if (!this.isSupabaseConfigured()) {
-      return {
-        memoryCount: 0,
-        sessionCount: 0,
-        transcriptCount: 0,
-        totalDurationSeconds: 0,
-        totalWords: 0,
-        uniqueTopics: [],
-        averageSessionDuration: 0,
-        averageWordsPerSession: 0
-      };
-    }
-
     try {
       const [memories, sessions, transcripts] = await Promise.all([
         this.getMemoryCardsByPatient(patientId),
@@ -562,10 +447,6 @@ export class StorageService {
 
   // Utility methods for data migration (if needed)
   static async migrateFromLocalStorage(): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured for migration');
-    }
-
     try {
       // Get data from localStorage
       const localMemories = JSON.parse(localStorage.getItem('family_memories_cards') || '[]');
@@ -602,10 +483,6 @@ export class StorageService {
 
   // Clear all data (for testing/development)
   static async clearAllData(): Promise<void> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase not configured');
-    }
-
     try {
       await Promise.all([
         supabase.from('transcripts').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -618,22 +495,5 @@ export class StorageService {
       console.error('Error clearing data:', error);
       throw error;
     }
-  }
-
-  // Helper methods
-  private static isSupabaseConfigured(): boolean {
-    return !!(supabaseUrl && supabaseAnonKey && 
-             supabaseUrl !== 'https://your-project-id.supabase.co' && 
-             supabaseAnonKey !== 'your-anon-key-here');
-  }
-
-  private static handleMissingSupabase(operation: string): any {
-    console.warn(`Cannot ${operation}: Supabase not configured. Please set up your Supabase credentials in the .env file.`);
-    // Return mock data structure for development
-    return {
-      id: `mock-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
   }
 }

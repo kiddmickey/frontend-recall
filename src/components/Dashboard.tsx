@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, User, MessageCircle, Calendar, BarChart3, FileText, Clock, TrendingUp, Heart, Home, AlertTriangle } from 'lucide-react';
+import { Plus, User, MessageCircle, Calendar, BarChart3, FileText, Clock, TrendingUp, Heart, Home } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import PatientProfileForm from './PatientProfileForm';
 import MemoryForm from './MemoryForm';
@@ -29,15 +29,6 @@ const Dashboard: React.FC = () => {
   const [editingProfile, setEditingProfile] = useState<any>(null);
   const [quickMemoryAdded, setQuickMemoryAdded] = useState<any>(null);
   const [emotionalCheckInData, setEmotionalCheckInData] = useState<any>(null);
-
-  // Check if Supabase is configured
-  const isSupabaseConfigured = () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    return !!(supabaseUrl && supabaseAnonKey && 
-             supabaseUrl !== 'https://your-project-id.supabase.co' && 
-             supabaseAnonKey !== 'your-anon-key-here');
-  };
 
   const handlePatientSelect = (patient: any) => {
     setCurrentPatient(patient);
@@ -140,62 +131,6 @@ const Dashboard: React.FC = () => {
     setCurrentPatient(null);
     setViewMode('dashboard');
   };
-
-  // Show Supabase configuration warning if not configured
-  if (!isSupabaseConfigured()) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-orange-50 rounded-lg border border-orange-200">
-        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-          <AlertTriangle className="w-8 h-8 text-orange-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-orange-800 mb-2">Supabase Configuration Required</h2>
-        <p className="text-orange-700 text-center mb-6 max-w-2xl">
-          To use this application, you need to connect it to a Supabase database. Please follow these steps:
-        </p>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl w-full">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Setup Instructions:</h3>
-          <ol className="list-decimal list-inside space-y-3 text-gray-700">
-            <li>
-              <strong>Create a Supabase project:</strong>
-              <br />
-              <span className="text-sm">Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">supabase.com</a> and create a new project</span>
-            </li>
-            <li>
-              <strong>Get your project credentials:</strong>
-              <br />
-              <span className="text-sm">In your Supabase dashboard, go to Settings → API to find your Project URL and anon/public key</span>
-            </li>
-            <li>
-              <strong>Update the .env file:</strong>
-              <br />
-              <span className="text-sm">Replace the placeholder values in the .env file with your actual Supabase credentials</span>
-            </li>
-            <li>
-              <strong>Set up the database schema:</strong>
-              <br />
-              <span className="text-sm">Run the migration file in your Supabase SQL editor to create the required tables</span>
-            </li>
-          </ol>
-          
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-800 mb-2">Current .env file should contain:</h4>
-            <pre className="text-sm text-gray-600 bg-white p-3 rounded border">
-{`VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here`}
-            </pre>
-          </div>
-        </div>
-        
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-6 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          Refresh After Configuration
-        </button>
-      </div>
-    );
-  }
 
   // Show loading state
   if (isLoading && patientProfiles.length === 0) {
