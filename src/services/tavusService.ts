@@ -25,23 +25,43 @@ export class TavusService {
         body: JSON.stringify({
           replica_id: this.replicaId,
           persona_id: this.personaId,
-          conversation_name: `Memory Session - ${patientName}`,
+          conversation_name: `A Conversation with My AI Memory Guide - ${patientName}`,
           conversational_context: conversationPrompt,
+          custom_greeting: "Hey there! It's so good to see you again. Let's go through some lovely memories together.",
           properties: {
-            max_call_duration: 1800, // 30 minutes
-            participant_left_timeout: 120,
-            participant_absent_timeout: 60,
+            max_call_duration: 3600,
+            participant_left_timeout: 60,
+            participant_absent_timeout: 300,
             enable_recording: true,
-            enable_transcription: true,
+            enable_closed_captions: true,
+            apply_greenscreen: true,
+            language: "english",
+            recording_s3_bucket_name: "conversation-recordings",
+            recording_s3_bucket_region: "us-east-1",
+            aws_assume_role_arn: ""
           },
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Tavus API error: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(`Tavus API error: ${response.status} - ${errorData}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      
+      // Expected response format:
+      // {
+      //   "conversation_id": "c123456",
+      //   "conversation_name": "A Conversation with My AI Memory Guide",
+      //   "status": "active",
+      //   "conversation_url": "https://tavus.daily.co/c123456",
+      //   "replica_id": "rb17cf590e15",
+      //   "persona_id": "pa266d0201f8",
+      //   "created_at": "2025-06-29T12:34:56Z"
+      // }
+      
+      return data;
     } catch (error) {
       console.error('Error creating Tavus conversation:', error);
       throw error;
@@ -235,7 +255,7 @@ export class TavusService {
   ): string {
     const { preferred_name, family_relationships, personality_traits } = patientProfile;
     
-    let prompt = `You are speaking with ${preferred_name}, a beloved family member. `;
+    let prompt = `You are a gentle, cheerful, and familiar AI companion helping ${preferred_name} with Alzheimer's recall beautiful life memories. Offer emotional support and ask reflective, lighthearted questions. `;
     
     // Add personality context
     if (personality_traits?.length > 0) {
@@ -285,7 +305,7 @@ export class TavusService {
     const { preferred_name, family_relationships, personality_traits } = patientProfile;
     const { focus_areas, custom_message, urgency_level } = checkInData;
     
-    let prompt = `You are conducting a gentle emotional check-in with ${preferred_name}, a beloved family member. `;
+    let prompt = `You are a gentle, cheerful, and familiar AI companion conducting an emotional check-in with ${preferred_name}, who has Alzheimer's. Offer emotional support and ask reflective, lighthearted questions. `;
     
     // Add personality context
     if (personality_traits?.length > 0) {

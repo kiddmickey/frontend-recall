@@ -68,6 +68,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         sessionType = selectedMemory ? 'memory_focused' : 'general';
       }
 
+      // Create conversation using Tavus API following the documentation
       const conversation = await tavusService.createConversation(
         conversationPrompt,
         patient.preferred_name
@@ -273,14 +274,15 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         </div>
       )}
 
-      {/* Video Area */}
+      {/* Video Area - Embed Tavus conversation using iframe as per documentation */}
       <div className="aspect-video bg-gray-900 relative">
         {conversationData?.conversation_url ? (
           <iframe
             src={conversationData.conversation_url}
             className="w-full h-full"
-            allow="camera; microphone; fullscreen"
-            title="Tavus Conversation"
+            allow="camera; microphone; fullscreen; display-capture"
+            style={{ border: 'none', borderRadius: '0' }}
+            title="Chat with Memory Support AI"
           />
         ) : (
           <div className="flex items-center justify-center h-full text-white">
