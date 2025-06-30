@@ -13,13 +13,14 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm py-4 sticky top-0 z-50">
+    <header className="bg-white shadow-sm py-4 sticky top-0 z-50 relative">
       <div className="container mx-auto px-4 flex items-center justify-between max-w-6xl">
         <div className="flex items-center gap-2">
           <BookHeart className="text-blue-600 h-8 w-8" />
           <h1 className="text-2xl font-bold text-gray-800">Family Memories</h1>
         </div>
-        <nav>
+        
+        <nav className="flex items-center gap-6">
           <ul className="flex gap-6">
             <li>
               <button
@@ -41,6 +42,21 @@ const Header = () => {
               </a>
             </li>
           </ul>
+          
+          {/* Bolt Icon */}
+          <a
+            href="https://bolt.new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center w-10 h-10 hover:scale-110 transition-transform duration-200"
+            title="Built with Bolt"
+          >
+            <img
+              src="/bolt-badge/white_circle_360x360/white_circle_360x360.svg"
+              alt="Built with Bolt"
+              className="w-8 h-8 drop-shadow-sm"
+            />
+          </a>
         </nav>
       </div>
     </header>
