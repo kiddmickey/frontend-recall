@@ -43,18 +43,18 @@ const Header = () => {
             </li>
           </ul>
           
-          {/* Bolt Icon */}
+          {/* Bolt Icon - Significantly Larger */}
           <a
             href="https://bolt.new"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center w-10 h-10 hover:scale-110 transition-transform duration-200"
+            className="flex items-center justify-center w-16 h-16 hover:scale-110 transition-transform duration-200"
             title="Built with Bolt"
           >
             <img
               src="/white_circle_360x360 copy.png"
               alt="Built with Bolt"
-              className="w-8 h-8 drop-shadow-sm"
+              className="w-14 h-14 drop-shadow-sm"
             />
           </a>
         </nav>
