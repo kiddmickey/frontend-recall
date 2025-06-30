@@ -1,3 +1,5 @@
+import { StorageService } from './storageService';
+
 const TAVUS_API_KEY = '829f44be964342748e0cd324eaf57fee';
 const REPLICA_ID = 'r93183fb36c0';
 const PERSONA_ID = 'pe783f201c13';
@@ -355,49 +357,49 @@ export class TavusService {
     const { preferred_name, family_relationships, personality_traits } = patientProfile;
     const { focus_areas, custom_message, urgency_level } = checkInData;
     
-    let prompt = `You are a gentle, cheerful, and familiar AI companion conducting an emotional check-in with ${preferred_name}, who has Alzheimer's. Offer emotional support and ask reflective, lighthearted questions. `;
+    let prompt = `You are a gentle, caring, and empathetic AI companion conducting an emotional check-in with ${preferred_name}, who has Alzheimer's. Your ONLY focus is on their current emotional state and feelings. DO NOT discuss photos, memories, or past events during this session. This is strictly about how they feel right now. `;
     
     // Add personality context
     if (personality_traits?.length > 0) {
       prompt += `They are known for being ${personality_traits.join(', ')}. `;
     }
 
-    // Add family context
+    // Add family context for emotional support
     const familyContext = Object.entries(family_relationships || {})
       .map(([relation, name]) => `${name} is their ${relation}`)
       .join(', ');
     
     if (familyContext) {
-      prompt += `Important family members include: ${familyContext}. `;
+      prompt += `Important family members include: ${familyContext}. You may reference these relationships when providing emotional support. `;
     }
 
     // Add urgency level guidance
     if (urgency_level === 'gentle') {
-      prompt += `Please be extra patient and sensitive in your approach. Take your time with questions and allow for pauses. `;
+      prompt += `Please be extra patient and sensitive in your approach. Take your time with questions and allow for pauses. Speak very softly and reassuringly. `;
     } else if (urgency_level === 'watch_closely') {
-      prompt += `Please be particularly attentive to their responses and emotional state. Watch for any signs of distress or concerning changes. `;
+      prompt += `Please be particularly attentive to their responses and emotional state. Watch for any signs of distress or concerning changes. Be ready to provide extra comfort and support. `;
     } else {
       prompt += `Maintain a warm, caring tone throughout the conversation. `;
     }
 
-    // Add focus areas
+    // Add focus areas with specific emotional check-in questions
     prompt += `Today's check-in should gently explore these areas: ${focus_areas.join(', ')}. `;
 
     // Add custom caregiver message if provided
     if (custom_message) {
-      prompt += `The caregiver has shared this important context: "${custom_message}". Please weave this information naturally into your conversation. `;
+      prompt += `The caregiver has shared this important context: "${custom_message}". Please weave this information naturally into your conversation and respond appropriately to any concerns mentioned. `;
     }
 
-    // Add conversation guidance based on focus areas
+    // Add conversation guidance based on focus areas - STRICTLY EMOTIONAL, NO MEMORY RECALL
     const focusGuidance = {
-      mood: "Ask open-ended questions about how they're feeling today, what's on their mind, and if anything is bothering them.",
-      sleep: "Gently inquire about their sleep quality, whether they slept well, and if they feel rested.",
-      energy: "Ask about their energy levels, whether they feel tired or energetic, and how they're feeling physically.",
-      appetite: "Check in about their interest in food, whether they've been eating well, and if they've enjoyed their meals.",
-      social: "Ask about connections with family and friends, recent visits or calls, and how they're feeling about social interactions.",
-      activities: "Inquire about their daily activities, hobbies they've enjoyed, and things that have brought them joy recently.",
-      comfort: "Gently ask about any physical discomfort, pain, or how they're feeling in their body.",
-      memory: "Check in about their mental clarity, if they've been remembering things well, and how they're feeling cognitively."
+      mood: "Ask open-ended questions like 'How are you feeling right now?' 'What's on your mind today?' 'Is there anything that's been bothering you?' Focus entirely on their current emotional state.",
+      sleep: "Gently ask 'How did you sleep last night?' 'Are you feeling rested today?' 'Have you been having trouble sleeping?' Focus on how their sleep affects how they feel right now.",
+      energy: "Ask 'How is your energy today?' 'Are you feeling tired or energetic?' 'How is your body feeling right now?' Focus on their current physical and mental energy levels.",
+      appetite: "Check in with 'How has your appetite been?' 'Are you enjoying your meals?' 'Have you been feeling hungry?' Focus on their current relationship with food and eating.",
+      social: "Ask 'How are you feeling about spending time with others?' 'Do you feel connected to your family and friends?' 'Would you like more or less social time?' Focus on their current social and emotional needs.",
+      activities: "Inquire 'What activities make you feel good right now?' 'Is there anything you'd like to do today?' 'How do you feel when you're doing things you enjoy?' Focus on current interests and emotional responses to activities.",
+      comfort: "Gently ask 'Are you comfortable right now?' 'Is there any pain or discomfort bothering you?' 'How is your body feeling today?' Focus on their current physical comfort and emotional response to any discomfort.",
+      memory: "Check in about 'How are you feeling about your thinking today?' 'Are you feeling clear-headed?' 'Is anything confusing or frustrating you?' Focus on their emotional response to cognitive changes, not testing their memory."
     };
 
     const selectedGuidance = focus_areas
@@ -409,15 +411,17 @@ export class TavusService {
       prompt += `Conversation guidance: ${selectedGuidance} `;
     }
 
-    // Add memory context for comfort
-    if (memoryCards?.length > 0) {
-      prompt += `You can reference their cherished memories from ${memoryCards
-        .slice(0, 2)
-        .map(m => m.location || m.date_taken)
-        .join(' and ')} to help them feel comfortable and connected. `;
-    }
-
-    prompt += `Remember to be emotionally supportive, non-judgmental, and create a safe space for them to share their feelings. Use open-ended questions, validate their emotions, and offer gentle encouragement. If they seem reluctant to talk about something, don't push - simply let them know you're there for them.`;
+    prompt += `CRITICAL INSTRUCTIONS:
+    - DO NOT ask about photos, pictures, or visual memories
+    - DO NOT ask them to recall specific past events or dates
+    - DO NOT reference their memory cards or uploaded photos
+    - DO NOT conduct any memory testing or recall exercises
+    - FOCUS ONLY on their current feelings, emotions, and immediate well-being
+    - Ask questions like: "How are you feeling right now?" "What would make you feel better today?" "Is there anything worrying you?" "What brings you comfort?"
+    - Be emotionally supportive, non-judgmental, and create a safe space for them to share their current feelings
+    - Use open-ended questions about emotions, validate their feelings, and offer gentle encouragement
+    - If they seem reluctant to talk about something, don't push - simply let them know you're there for them
+    - Your goal is emotional support and understanding their current state, not memory recall or cognitive testing`;
 
     return prompt;
   }
