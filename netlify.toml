@@ -1,0 +1,10 @@
+[[redirects]]
+  from = "/tavusapi/*"
+  to = "https://tavusapi.com/v2/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+[build]
+  publish = "dist"
+  command = "npm run build"
