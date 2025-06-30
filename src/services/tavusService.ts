@@ -1,6 +1,6 @@
-const TAVUS_API_KEY = '5a77b4154cfc4453b08ab72a805fc30e';
-const REPLICA_ID = 'rb17cf590e15';
-const PERSONA_ID = 'p34cc82788ae';
+const TAVUS_API_KEY = '829f44be964342748e0cd324eaf57fee';
+const REPLICA_ID = 'r93183fb36c0';
+const PERSONA_ID = 'pe783f201c13';
 const TAVUS_BASE_URL = '/tavusapi';
 
 export class TavusService {
@@ -56,8 +56,8 @@ export class TavusService {
       //   "conversation_name": "A Conversation with My AI Memory Guide",
       //   "status": "active",
       //   "conversation_url": "https://tavus.daily.co/c123456",
-      //   "replica_id": "rb17cf590e15",
-      //   "persona_id": "p34cc82788ae",
+      //   "replica_id": "r93183fb36c0",
+      //   "persona_id": "pe783f201c13",
       //   "created_at": "2025-06-29T12:34:56Z"
       // }
       
