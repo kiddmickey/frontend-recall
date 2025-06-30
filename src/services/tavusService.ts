@@ -25,9 +25,9 @@ export class TavusService {
         body: JSON.stringify({
           replica_id: this.replicaId,
           persona_id: this.personaId,
-          conversation_name: `A Conversation with My AI Memory Guide - ${patientName}`,
+          conversation_name: `Interactive Memory Session with ${patientName}`,
           conversational_context: conversationPrompt,
-          custom_greeting: "Hey there! It's so good to see you again. Let's go through some lovely memories together.",
+          custom_greeting: "Hello there! I'm so excited to explore some wonderful memories with you today. We're going to look at some special photos together and see what you remember. Are you ready to begin this journey with me?",
           properties: {
             max_call_duration: 3600,
             participant_left_timeout: 60,
@@ -49,18 +49,6 @@ export class TavusService {
       }
 
       const data = await response.json();
-      
-      // Expected response format:
-      // {
-      //   "conversation_id": "c123456",
-      //   "conversation_name": "A Conversation with My AI Memory Guide",
-      //   "status": "active",
-      //   "conversation_url": "https://tavus.daily.co/c123456",
-      //   "replica_id": "r93183fb36c0",
-      //   "persona_id": "pe783f201c13",
-      //   "created_at": "2025-06-29T12:34:56Z"
-      // }
-      
       return data;
     } catch (error) {
       console.error('Error creating Tavus conversation:', error);
@@ -293,6 +281,68 @@ export class TavusService {
     }
 
     prompt += ` Please speak warmly and naturally, as if you're a caring family member who knows them well. Ask gentle questions about their day, their feelings, and help them recall happy memories. Be patient, encouraging, and emotionally supportive.`;
+
+    return prompt;
+  }
+
+  generateConversationPromptWithQuiz(
+    patientProfile: any,
+    memoryCards: any[],
+    selectedMemory?: any,
+    quizQuestions?: any[]
+  ): string {
+    const { preferred_name, family_relationships, personality_traits } = patientProfile;
+    
+    let prompt = `You are a gentle, cheerful, and familiar AI companion helping ${preferred_name} with Alzheimer's recall beautiful life memories through an interactive experience. You will be guiding them through a memory quiz where they'll see photos and answer questions about their precious memories. `;
+    
+    // Add personality context
+    if (personality_traits?.length > 0) {
+      prompt += `They are known for being ${personality_traits.join(', ')}. `;
+    }
+
+    // Add family context
+    const familyContext = Object.entries(family_relationships || {})
+      .map(([relation, name]) => `${name} is their ${relation}`)
+      .join(', ');
+    
+    if (familyContext) {
+      prompt += `Important family members include: ${familyContext}. `;
+    }
+
+    // Add quiz context
+    if (quizQuestions?.length > 0) {
+      prompt += `Today's session includes ${quizQuestions.length} interactive memory questions. As they answer each question, provide encouraging feedback and help them remember details about each photo. `;
+    }
+
+    // Add specific memory context if provided
+    if (selectedMemory) {
+      prompt += `The session will focus on a special memory from ${selectedMemory.date_taken}`;
+      if (selectedMemory.location) {
+        prompt += ` at ${selectedMemory.location}`;
+      }
+      prompt += `. ${selectedMemory.caption || 'This was a meaningful moment in their life.'}`;
+      
+      if (selectedMemory.people_involved?.length > 0) {
+        prompt += ` People who were there included: ${selectedMemory.people_involved.join(', ')}.`;
+      }
+    }
+
+    // Add general memory context
+    if (memoryCards?.length > 0) {
+      prompt += ` The quiz will cover various cherished memories from ${memoryCards
+        .slice(0, 3)
+        .map(m => m.location || m.date_taken)
+        .join(', ')}.`;
+    }
+
+    prompt += ` Your role is to:
+    1. Welcome them warmly and explain that you'll be looking at photos together
+    2. When they answer quiz questions correctly, celebrate their success with specific details about the memory
+    3. When they answer incorrectly, gently provide the correct information while being encouraging
+    4. Share stories and ask follow-up questions about each memory to keep them engaged
+    5. Maintain a positive, patient, and loving tone throughout the session
+    
+    Remember to speak as if you're a caring family member who treasures these memories just as much as they do. Make this experience joyful, meaningful, and confidence-building.`;
 
     return prompt;
   }
