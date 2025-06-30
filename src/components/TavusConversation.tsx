@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle, ExternalLink } from 'lucide-react';
 import { tavusService } from '../services/tavusService';
 import { StorageService } from '../services/storageService';
 
@@ -24,6 +24,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [conversationOpened, setConversationOpened] = useState(false);
 
   useEffect(() => {
     initializeConversation();
@@ -123,19 +124,24 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     }
   };
 
-  const startCall = async () => {
-    setIsCallActive(true);
-    setCallDuration(0);
+  const openConversationInNewTab = () => {
+    if (conversationData?.conversation_url) {
+      // Open conversation in new tab
+      window.open(conversationData.conversation_url, '_blank');
+      
+      // Mark conversation as opened and start tracking
+      setConversationOpened(true);
+      setIsCallActive(true);
+      setCallDuration(0);
 
-    // Update session to mark as started
-    if (sessionId) {
-      try {
-        await StorageService.updateSession(sessionId, {
+      // Update session to mark as started
+      if (sessionId) {
+        StorageService.updateSession(sessionId, {
           status: 'active',
           started_at: new Date().toISOString()
+        }).catch(err => {
+          console.error('Error updating session start:', err);
         });
-      } catch (err) {
-        console.error('Error updating session start:', err);
       }
     }
   };
@@ -167,6 +173,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     }
     
     setIsCallActive(false);
+    setConversationOpened(false);
     onEnd();
   };
 
@@ -295,35 +302,44 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         </div>
       )}
 
-      {/* Video Area - Embed Tavus conversation using iframe as per documentation */}
+      {/* Conversation Area */}
       <div className="aspect-video bg-gray-900 relative">
         {conversationData?.conversation_url ? (
-          <iframe
-            src={conversationData.conversation_url}
-            className="w-full h-full"
-            allow="camera; microphone; fullscreen; display-capture"
-            style={{ border: 'none', borderRadius: '0' }}
-            title="Chat with Memory Support AI"
-          />
+          <div className="flex items-center justify-center h-full text-white">
+            <div className="text-center">
+              {!conversationOpened ? (
+                <>
+                  <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-4">Ready to start conversation</p>
+                  <button
+                    onClick={openConversationInNewTab}
+                    className="flex items-center gap-3 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors mx-auto"
+                  >
+                    <ExternalLink className="w-6 h-6" />
+                    Open Conversation in New Tab
+                  </button>
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-2">Conversation is active in a new tab</p>
+                  <p className="text-sm opacity-75">
+                    Switch to the conversation tab to interact with {patient.preferred_name}
+                  </p>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm">Active conversation</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full text-white">
             <div className="text-center">
               <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Ready to start conversation</p>
+              <p className="text-lg">Preparing conversation...</p>
             </div>
-          </div>
-        )}
-        
-        {/* Call Status Overlay */}
-        {!isCallActive && conversationData?.conversation_url && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <button
-              onClick={startCall}
-              className="flex items-center gap-3 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-            >
-              <Phone className="w-6 h-6" />
-              Start Conversation
-            </button>
           </div>
         )}
       </div>
@@ -339,6 +355,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
             disabled={!isCallActive}
+            title={isMuted ? 'Unmute' : 'Mute'}
           >
             {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
@@ -351,6 +368,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
             disabled={!isCallActive}
+            title={isSpeakerOn ? 'Turn off speaker' : 'Turn on speaker'}
           >
             {isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
           </button>
@@ -358,6 +376,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
           <button
             onClick={endCall}
             className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+            title="End conversation"
           >
             <PhoneOff className="w-5 h-5" />
           </button>
@@ -367,10 +386,10 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
           {isCallActive ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Call in progress</span>
+              <span>Conversation active in new tab</span>
             </div>
           ) : (
-            'Call controls'
+            'Ready to start conversation'
           )}
         </div>
       </div>
