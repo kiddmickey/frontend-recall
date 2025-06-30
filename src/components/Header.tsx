@@ -52,7 +52,7 @@ const Header = () => {
             title="Built with Bolt"
           >
             <img
-              src="/bolt-badge/white_circle_360x360/white_circle_360x360.svg"
+              src="/white_circle_360x360 copy.png"
               alt="Built with Bolt"
               className="w-8 h-8 drop-shadow-sm"
             />
