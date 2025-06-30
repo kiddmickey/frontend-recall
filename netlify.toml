@@ -1,6 +1,6 @@
 [[redirects]]
   from = "/tavusapi/*"
-  to = "https://tavusapi.com/v2/:splat"
+  to = "https://api.tavus.io/v2/:splat"
   status = 200
   force = true
   headers = {X-From = "Netlify"}

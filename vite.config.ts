@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/tavusapi': {
-        target: 'https://tavusapi.com/v2',
+        target: 'https://api.tavus.io/v2',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/tavusapi/, ''),
         secure: true,
