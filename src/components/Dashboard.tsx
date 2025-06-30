@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, User, MessageCircle, Calendar, BarChart3, FileText, Clock, TrendingUp, Heart, Home } from 'lucide-react';
+import { Plus, User, MessageCircle, Calendar, BarChart3, FileText, Clock, TrendingUp, Heart, Home, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import PatientProfileForm from './PatientProfileForm';
 import MemoryForm from './MemoryForm';
@@ -131,6 +131,43 @@ const Dashboard: React.FC = () => {
     setCurrentPatient(null);
     setViewMode('dashboard');
   };
+
+  // Check if Supabase is configured
+  const isSupabaseConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+  // Show Supabase configuration error
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-orange-50 rounded-lg border border-orange-200">
+        <div className="text-orange-600 mb-4">
+          <AlertTriangle className="w-12 h-12" />
+        </div>
+        <h3 className="text-xl font-bold text-orange-800 mb-4">Database Configuration Required</h3>
+        <div className="max-w-2xl text-center space-y-4">
+          <p className="text-orange-700">
+            The application requires Supabase environment variables to be configured in your Netlify deployment.
+          </p>
+          <div className="bg-white p-4 rounded-lg border border-orange-200 text-left">
+            <h4 className="font-semibold text-orange-800 mb-2">To fix this issue:</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-orange-700">
+              <li>Go to your Netlify dashboard</li>
+              <li>Navigate to Site settings → Environment variables</li>
+              <li>Add these environment variables:
+                <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                  <li><code className="bg-orange-100 px-1 rounded">VITE_SUPABASE_URL</code> - Your Supabase project URL</li>
+                  <li><code className="bg-orange-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> - Your Supabase anon key</li>
+                </ul>
+              </li>
+              <li>Redeploy your site</li>
+            </ol>
+          </div>
+          <p className="text-sm text-orange-600">
+            You can find these values in your Supabase project dashboard under Settings → API.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading state
   if (isLoading && patientProfiles.length === 0) {

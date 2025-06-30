@@ -3,7 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check if environment variables are available
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your Netlify environment variables.');
+  
+  // Create a mock client that will show helpful error messages
+  const mockClient = {
+    from: () => ({
+      insert: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      select: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      update: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      delete: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      eq: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      order: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.')),
+      single: () => Promise.reject(new Error('Supabase not configured. Please set up environment variables.'))
+    })
+  };
+  
+  // Export mock client to prevent app crashes
+  var supabase = mockClient as any;
+} else {
+  var supabase = createClient(supabaseUrl, supabaseAnonKey);
+}
 
 export class StorageService {
   // Memory Cards
