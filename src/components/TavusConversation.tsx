@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle, ExternalLink, Monitor } from 'lucide-react';
 import { tavusService } from '../services/tavusService';
 import { StorageService } from '../services/storageService';
 
@@ -19,11 +19,10 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
   const [conversationData, setConversationData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCallActive, setIsCallActive] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isConversationOpened, setIsConversationOpened] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [conversationWindow, setConversationWindow] = useState<Window | null>(null);
 
   useEffect(() => {
     initializeConversation();
@@ -31,13 +30,18 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isCallActive) {
+    if (isConversationOpened) {
       interval = setInterval(() => {
         setCallDuration(prev => prev + 1);
+        
+        // Check if the conversation window is still open
+        if (conversationWindow && conversationWindow.closed) {
+          handleConversationEnd();
+        }
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isCallActive]);
+  }, [isConversationOpened, conversationWindow]);
 
   const initializeConversation = async () => {
     try {
@@ -123,24 +127,38 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     }
   };
 
-  const startCall = async () => {
-    setIsCallActive(true);
-    setCallDuration(0);
+  const openConversationInNewTab = () => {
+    if (conversationData?.conversation_url) {
+      const newWindow = window.open(
+        conversationData.conversation_url,
+        '_blank',
+        'width=1200,height=800,scrollbars=yes,resizable=yes'
+      );
+      
+      if (newWindow) {
+        setConversationWindow(newWindow);
+        setIsConversationOpened(true);
+        setCallDuration(0);
 
-    // Update session to mark as started
-    if (sessionId) {
-      try {
-        await StorageService.updateSession(sessionId, {
-          status: 'active',
-          started_at: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('Error updating session start:', err);
+        // Update session to mark as started
+        if (sessionId) {
+          StorageService.updateSession(sessionId, {
+            status: 'active',
+            started_at: new Date().toISOString()
+          }).catch(err => {
+            console.error('Error updating session start:', err);
+          });
+        }
+
+        // Focus on the new window
+        newWindow.focus();
+      } else {
+        alert('Please allow pop-ups for this site to open the conversation in a new tab.');
       }
     }
   };
 
-  const endCall = async () => {
+  const handleConversationEnd = async () => {
     const endTime = new Date().toISOString();
     
     // End the Tavus conversation
@@ -166,16 +184,14 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       }
     }
     
-    setIsCallActive(false);
+    // Close the conversation window if it's still open
+    if (conversationWindow && !conversationWindow.closed) {
+      conversationWindow.close();
+    }
+    
+    setIsConversationOpened(false);
+    setConversationWindow(null);
     onEnd();
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
-  const toggleSpeaker = () => {
-    setIsSpeakerOn(!isSpeakerOn);
   };
 
   const formatDuration = (seconds: number) => {
@@ -252,7 +268,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
             </div>
           </div>
           <div className="text-right">
-            {isCallActive && (
+            {isConversationOpened && (
               <div>
                 <div className="text-sm opacity-90">Call Duration</div>
                 <div className="text-lg font-mono">{formatDuration(callDuration)}</div>
@@ -295,84 +311,83 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         </div>
       )}
 
-      {/* Video Area - Embed Tavus conversation using iframe as per documentation */}
-      <div className="aspect-video bg-gray-900 relative">
-        {conversationData?.conversation_url ? (
-          <iframe
-            src={conversationData.conversation_url}
-            className="w-full h-full"
-            allow="camera; microphone; fullscreen; display-capture"
-            style={{ border: 'none', borderRadius: '0' }}
-            title="Chat with Memory Support AI"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-white">
-            <div className="text-center">
-              <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Ready to start conversation</p>
+      {/* Main Content Area */}
+      <div className="p-8">
+        {!isConversationOpened ? (
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Monitor className="w-12 h-12 text-white" />
             </div>
-          </div>
-        )}
-        
-        {/* Call Status Overlay */}
-        {!isCallActive && conversationData?.conversation_url && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Ready to Start Conversation</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              The conversation will open in a new tab for the best experience. Make sure pop-ups are enabled for this site.
+            </p>
+            
             <button
-              onClick={startCall}
-              className="flex items-center gap-3 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+              onClick={openConversationInNewTab}
+              className="flex items-center gap-3 mx-auto px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg text-lg font-medium"
             >
-              <Phone className="w-6 h-6" />
-              Start Conversation
+              <ExternalLink className="w-6 h-6" />
+              Open Conversation in New Tab
             </button>
+            
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Video className="w-3 h-3 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-medium text-blue-900 mb-1">💡 Tips for the best experience:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Allow camera and microphone access when prompted</li>
+                    <li>• Use headphones for better audio quality</li>
+                    <li>• Ensure good lighting for video</li>
+                    <li>• Keep this tab open to track conversation time</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Conversation Active</h3>
+            <p className="text-gray-600 mb-6">
+              The conversation is running in a separate tab. You can return to this page anytime.
+            </p>
+            
+            <div className="flex items-center justify-center gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{formatDuration(callDuration)}</div>
+                <div className="text-sm text-gray-500">Duration</div>
+              </div>
+              <div className="w-px h-12 bg-gray-300"></div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-medium">Live</span>
+                </div>
+                <div className="text-sm text-gray-500">Status</div>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleConversationEnd}
+              className="flex items-center gap-2 mx-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <PhoneOff className="w-5 h-5" />
+              End Conversation
+            </button>
+            
+            <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-800">
+                <strong>Note:</strong> The conversation will automatically end when the tab is closed, or you can use the button above.
+              </p>
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Controls */}
-      <div className="p-4 bg-gray-50 border-t">
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={toggleMute}
-            className={`p-3 rounded-full transition-colors ${
-              isMuted 
-                ? 'bg-red-600 text-white hover:bg-red-700' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            disabled={!isCallActive}
-          >
-            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </button>
-          
-          <button
-            onClick={toggleSpeaker}
-            className={`p-3 rounded-full transition-colors ${
-              isSpeakerOn 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            disabled={!isCallActive}
-          >
-            {isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-          </button>
-          
-          <button
-            onClick={endCall}
-            className="p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
-          >
-            <PhoneOff className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="text-center mt-3 text-sm text-gray-600">
-          {isCallActive ? (
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Call in progress</span>
-            </div>
-          ) : (
-            'Call controls'
-          )}
-        </div>
       </div>
 
       {/* Memory Context */}
