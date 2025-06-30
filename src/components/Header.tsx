@@ -17,7 +17,7 @@ const Header = () => {
       <div className="container mx-auto px-4 flex items-center justify-between max-w-6xl">
         <div className="flex items-center gap-2">
           <BookHeart className="text-blue-600 h-8 w-8" />
-          <h1 className="text-2xl font-bold text-gray-800">Family Memories</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Total Recall</h1>
         </div>
         
         <nav className="flex items-center gap-6">

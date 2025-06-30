@@ -200,7 +200,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-6">
         <div className="text-center py-8">
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Family Memories</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Total Recall</h2>
           <p className="text-gray-600 mb-6">
             Create a patient profile to begin sharing memories and conversations
           </p>

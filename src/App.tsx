@@ -14,7 +14,7 @@ function App() {
             <Dashboard />
           </main>
           <footer className="text-center p-6 text-gray-500 text-sm">
-            <p>© 2025 Family Memories AI Companion. All rights reserved.</p>
+            <p>© 2025 Total Recall AI Companion. All rights reserved.</p>
           </footer>
         </FormProvider>
       </AppProvider>
