@@ -4,7 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import PatientProfileForm from './PatientProfileForm';
 import MemoryForm from './MemoryForm';
 import MemoryCardDisplay from './MemoryCardDisplay';
-import TavusConversationWithQuiz from './TavusConversationWithQuiz';
+import TavusConversation from './TavusConversation';
 import QuickMemoryForm from './QuickMemoryForm';
 import EmotionalCheckInForm from './EmotionalCheckInForm';
 import { StorageService } from '../services/storageService';
@@ -309,7 +309,7 @@ const Dashboard: React.FC = () => {
 
   if (viewMode === 'conversation') {
     return (
-      <TavusConversationWithQuiz
+      <TavusConversation
         patient={currentPatient}
         selectedMemory={selectedMemory}
         emotionalCheckInData={emotionalCheckInData}
@@ -569,7 +569,6 @@ const Dashboard: React.FC = () => {
                     <p className="font-medium text-gray-800">
                       {session.session_type === 'memory_focused' ? 'Memory-focused conversation' : 
                        session.session_type === 'emotional_checkin' ? 'Emotional check-in' : 
-                       session.session_type === 'quiz' ? 'Memory quiz session' :
                        'General conversation'}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -577,11 +576,6 @@ const Dashboard: React.FC = () => {
                       {new Date(session.created_at).toLocaleTimeString()}
                       {session.duration_seconds > 0 && ` • ${Math.floor(session.duration_seconds / 60)}m ${session.duration_seconds % 60}s`}
                     </p>
-                    {session.quiz_data && (
-                      <p className="text-xs text-purple-600 mt-1">
-                        Quiz Score: {session.quiz_data.score} • {session.quiz_data.correct_answers}/{session.quiz_data.total_questions} correct
-                      </p>
-                    )}
                     {session.transcript_summary && (
                       <p className="text-xs text-blue-600 mt-1">
                         <FileText className="w-3 h-3 inline mr-1" />
