@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle, ExternalLink, Trophy, Play } from 'lucide-react';
+import { Video, Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, FileText, Clock, Heart, AlertTriangle, MessageCircle, ExternalLink } from 'lucide-react';
 import { tavusService } from '../services/tavusService';
 import { StorageService } from '../services/storageService';
-import { QuizService, QuizQuestion } from '../services/quizService';
-import MemoryQuizCard from './MemoryQuizCard';
 
 interface TavusConversationProps {
   patient: any;
@@ -28,16 +26,6 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [conversationOpened, setConversationOpened] = useState(false);
 
-  // Quiz-related state
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>(undefined);
-  const [showQuizResult, setShowQuizResult] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [isQuizActive, setIsQuizActive] = useState(false);
-  const [avatarResponse, setAvatarResponse] = useState<string>('');
-  const [showAvatarResponse, setShowAvatarResponse] = useState(false);
-
   useEffect(() => {
     initializeConversation();
   }, [patient, selectedMemory, emotionalCheckInData]);
@@ -60,10 +48,6 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       // Get patient's memories from storage
       const memoryCards = await StorageService.getMemoryCardsByPatient(patient.id);
       
-      // Generate quiz questions from memories
-      const quiz = await QuizService.generateQuizFromMemories(patient.id);
-      setQuizQuestions(quiz);
-      
       let conversationPrompt: string;
       let sessionType: string;
 
@@ -76,17 +60,16 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         );
         sessionType = 'emotional_checkin';
       } else {
-        // Generate regular conversation prompt with quiz integration
-        conversationPrompt = tavusService.generateConversationPromptWithQuiz(
+        // Generate regular conversation prompt
+        conversationPrompt = tavusService.generateConversationPrompt(
           patient,
           memoryCards,
-          selectedMemory,
-          quiz
+          selectedMemory
         );
         sessionType = selectedMemory ? 'memory_focused' : 'general';
       }
 
-      // Create conversation using Tavus API
+      // Create conversation using Tavus API following the documentation
       const conversation = await tavusService.createConversation(
         conversationPrompt,
         patient.preferred_name
@@ -94,7 +77,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
 
       setConversationData(conversation);
       
-      // Create session record
+      // Create session record - let Supabase generate the UUID
       const session = {
         patient_id: patient.id,
         memory_id: selectedMemory?.id || null,
@@ -115,6 +98,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     } catch (err) {
       console.error('Conversation initialization error:', err);
       
+      // Parse the error message to provide more specific feedback
       let errorMessage = 'Failed to initialize conversation. Please try again.';
       
       if (err && typeof err === 'object' && 'message' in err) {
@@ -142,19 +126,15 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
 
   const openConversationInNewTab = () => {
     if (conversationData?.conversation_url) {
+      // Open conversation in new tab
       window.open(conversationData.conversation_url, '_blank');
       
+      // Mark conversation as opened and start tracking
       setConversationOpened(true);
       setIsCallActive(true);
       setCallDuration(0);
 
-      // Start quiz if we have questions and not in emotional check-in mode
-      if (quizQuestions.length > 0 && !emotionalCheckInData) {
-        setTimeout(() => {
-          setIsQuizActive(true);
-        }, 3000); // Start quiz after 3 seconds to let conversation begin
-      }
-
+      // Update session to mark as started
       if (sessionId) {
         StorageService.updateSession(sessionId, {
           status: 'active',
@@ -166,46 +146,10 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     }
   };
 
-  const handleAnswerSelect = (answerIndex: number) => {
-    if (selectedAnswer !== undefined || showQuizResult) return;
-
-    setSelectedAnswer(answerIndex);
-    setShowQuizResult(true);
-
-    const currentQuestion = quizQuestions[currentQuestionIndex];
-    const isCorrect = answerIndex === currentQuestion.correctAnswer;
-    
-    if (isCorrect) {
-      setQuizScore(prev => prev + 1);
-    }
-
-    // Generate avatar response
-    const response = QuizService.generateAvatarResponse(
-      isCorrect, 
-      currentQuestion, 
-      currentQuestion.options[answerIndex]
-    );
-    setAvatarResponse(response);
-    setShowAvatarResponse(true);
-
-    // Auto-advance to next question after 4 seconds
-    setTimeout(() => {
-      if (currentQuestionIndex < quizQuestions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setSelectedAnswer(undefined);
-        setShowQuizResult(false);
-        setShowAvatarResponse(false);
-      } else {
-        // Quiz completed
-        setIsQuizActive(false);
-        setShowAvatarResponse(false);
-      }
-    }, 4000);
-  };
-
   const endCall = async () => {
     const endTime = new Date().toISOString();
     
+    // End the Tavus conversation
     if (conversationData?.conversation_id) {
       try {
         await tavusService.endConversation(conversationData.conversation_id);
@@ -215,6 +159,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       }
     }
     
+    // Update session with end time and duration
     if (sessionId) {
       try {
         await StorageService.updateSession(sessionId, {
@@ -229,7 +174,6 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
     
     setIsCallActive(false);
     setConversationOpened(false);
-    setIsQuizActive(false);
     onEnd();
   };
 
@@ -257,16 +201,16 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       };
     } else if (selectedMemory) {
       return {
-        title: 'Memory-Focused Conversation with Quiz',
+        title: 'Memory-Focused Conversation',
         subtitle: `Discussing memory from ${new Date(selectedMemory.date_taken).toLocaleDateString()}`,
-        icon: <Trophy className="w-5 h-5" />,
+        icon: <FileText className="w-5 h-5" />,
         color: 'from-blue-600 to-blue-700'
       };
     } else {
       return {
-        title: 'Interactive Memory Conversation',
-        subtitle: 'Conversation with memory quiz activities',
-        icon: <Trophy className="w-5 h-5" />,
+        title: 'General Conversation',
+        subtitle: 'Open conversation with memory sharing',
+        icon: <MessageCircle className="w-5 h-5" />,
         color: 'from-green-600 to-green-700'
       };
     }
@@ -277,9 +221,6 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
       <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-md">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
         <p className="text-gray-600">Preparing conversation with {patient.preferred_name}...</p>
-        {quizQuestions.length > 0 && (
-          <p className="text-sm text-blue-600 mt-2">Setting up {quizQuestions.length} memory quiz questions...</p>
-        )}
       </div>
     );
   }
@@ -305,7 +246,7 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      {/* Header with Quiz Score */}
+      {/* Header */}
       <div className={`bg-gradient-to-r ${sessionDisplay.color} text-white p-4`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -318,14 +259,6 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
             </div>
           </div>
           <div className="text-right">
-            {quizQuestions.length > 0 && isCallActive && (
-              <div className="mb-2">
-                <div className="flex items-center gap-2 text-sm opacity-90">
-                  <Trophy className="w-4 h-4" />
-                  <span>Quiz Score: {quizScore}/{Math.min(currentQuestionIndex + (showQuizResult ? 1 : 0), quizQuestions.length)}</span>
-                </div>
-              </div>
-            )}
             {isCallActive && (
               <div>
                 <div className="text-sm opacity-90">Call Duration</div>
@@ -369,116 +302,47 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         </div>
       )}
 
-      {/* Main Content Area - Split Layout */}
-      <div className="flex h-96">
-        {/* Left Side - Video Conversation */}
-        <div className="flex-1 bg-gray-900 relative">
-          {conversationData?.conversation_url ? (
-            <div className="flex items-center justify-center h-full text-white">
-              <div className="text-center">
-                {!conversationOpened ? (
-                  <>
-                    <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg mb-4">Ready to start conversation</p>
-                    <button
-                      onClick={openConversationInNewTab}
-                      className="flex items-center gap-3 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors mx-auto"
-                    >
-                      <ExternalLink className="w-6 h-6" />
-                      Start Interactive Session
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg mb-2">Conversation is active in a new tab</p>
-                    <p className="text-sm opacity-75">
-                      Switch to the conversation tab to interact with {patient.preferred_name}
-                    </p>
-                    <div className="mt-4 flex items-center justify-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm">Active conversation</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-white">
-              <div className="text-center">
-                <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Preparing conversation...</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Side - Memory Quiz Card */}
-        <div className="w-80 bg-gray-50 border-l flex items-center justify-center p-4">
-          {isQuizActive && quizQuestions.length > 0 && currentQuestionIndex < quizQuestions.length ? (
-            <MemoryQuizCard
-              question={quizQuestions[currentQuestionIndex]}
-              currentQuestionIndex={currentQuestionIndex}
-              totalQuestions={quizQuestions.length}
-              score={quizScore}
-              onAnswerSelect={handleAnswerSelect}
-              selectedAnswer={selectedAnswer}
-              showResult={showQuizResult}
-              isCorrect={selectedAnswer === quizQuestions[currentQuestionIndex]?.correctAnswer}
-            />
-          ) : quizQuestions.length > 0 && !isQuizActive && conversationOpened ? (
-            <div className="text-center p-6">
-              <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                {currentQuestionIndex >= quizQuestions.length ? 'Quiz Complete!' : 'Memory Quiz Ready'}
-              </h3>
-              {currentQuestionIndex >= quizQuestions.length ? (
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    Final Score: {quizScore}/{quizQuestions.length}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Great job exploring those memories together!
-                  </p>
-                </div>
+      {/* Conversation Area */}
+      <div className="aspect-video bg-gray-900 relative">
+        {conversationData?.conversation_url ? (
+          <div className="flex items-center justify-center h-full text-white">
+            <div className="text-center">
+              {!conversationOpened ? (
+                <>
+                  <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-4">Ready to start conversation</p>
+                  <button
+                    onClick={openConversationInNewTab}
+                    className="flex items-center gap-3 px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors mx-auto"
+                  >
+                    <ExternalLink className="w-6 h-6" />
+                    Open Conversation in New Tab
+                  </button>
+                </>
               ) : (
-                <p className="text-gray-600 mb-4">
-                  {quizQuestions.length} memory questions prepared
-                </p>
+                <>
+                  <ExternalLink className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-2">Conversation is active in a new tab</p>
+                  <p className="text-sm opacity-75">
+                    Switch to the conversation tab to interact with {patient.preferred_name}
+                  </p>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm">Active conversation</span>
+                  </div>
+                </>
               )}
             </div>
-          ) : (
-            <div className="text-center p-6">
-              <Play className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">Memory Quiz</h3>
-              <p className="text-gray-500 text-sm">
-                {quizQuestions.length > 0 
-                  ? 'Quiz will start once the conversation begins'
-                  : 'No quiz questions available for this session'
-                }
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Avatar Response Overlay */}
-      {showAvatarResponse && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full text-white">
             <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">AI Response</h3>
-              <p className="text-gray-700 leading-relaxed">{avatarResponse}</p>
-              <div className="mt-4 text-sm text-gray-500">
-                Moving to next question...
-              </div>
+              <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg">Preparing conversation...</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Controls */}
       <div className="p-4 bg-gray-50 border-t">
@@ -520,17 +384,9 @@ const TavusConversation: React.FC<TavusConversationProps> = ({
         
         <div className="text-center mt-3 text-sm text-gray-600">
           {isCallActive ? (
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Conversation active</span>
-              </div>
-              {quizQuestions.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                  <span>Interactive quiz enabled</span>
-                </div>
-              )}
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Conversation active in new tab</span>
             </div>
           ) : (
             'Ready to start conversation'
